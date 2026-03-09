@@ -60,9 +60,11 @@ def test_complete_purchase(setup):
     checkout = reach_checkout(setup)
     checkout.enter_details("Arun", "KM", "560001")
     checkout.click_continue()
+    # Wait for step two URL first
     WebDriverWait(setup, 15).until(
-        EC.presence_of_element_located((By.ID, "finish"))
+        EC.url_contains("checkout-step-two")
     )
+    time.sleep(1)
     checkout.click_finish()
     checkout.wait_for_order_completion()
     assert "checkout-complete" in setup.current_url
