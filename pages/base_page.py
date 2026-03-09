@@ -17,20 +17,8 @@ class BasePage:
     def type(self, locator, text):
         self.log.info(f"Typing '{text}' into element: {locator}")
         element = self.wait.until(EC.visibility_of_element_located(locator))
-        # Use JS to set value — most reliable in headless Chrome
-        self.driver.execute_script("arguments[0].value = '';", element)
-        self.driver.execute_script(
-            "arguments[0].value = arguments[1];", element, text
-        )
-        # Trigger input event so React/JS frameworks register the change
-        self.driver.execute_script(
-            "arguments[0].dispatchEvent(new Event('input', { bubbles: true }));",
-            element
-        )
-        self.driver.execute_script(
-            "arguments[0].dispatchEvent(new Event('change', { bubbles: true }));",
-            element
-        )
+        element.clear()
+        element.send_keys(text)
 
     def get_text(self, locator):
         self.log.info(f"Getting text from element: {locator}")
