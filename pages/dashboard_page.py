@@ -1,3 +1,4 @@
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from pages.base_page import BasePage
@@ -16,17 +17,24 @@ class DashboardPage(BasePage):
         self.wait.until(
             EC.presence_of_all_elements_located(self.ADD_TO_CART_BUTTON)
         )
+        time.sleep(1)
         buttons = self.driver.find_elements(*self.ADD_TO_CART_BUTTON)
-        # JS click — most reliable, avoids intercept issues
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[0])
+        time.sleep(0.5)
         self.driver.execute_script("arguments[0].click();", buttons[0])
+        time.sleep(2)
 
     def add_multiple_products(self, count):
         self.wait.until(
             EC.presence_of_all_elements_located(self.ADD_TO_CART_BUTTON)
         )
+        time.sleep(1)
         buttons = self.driver.find_elements(*self.ADD_TO_CART_BUTTON)
         for i in range(count):
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", buttons[i])
+            time.sleep(0.5)
             self.driver.execute_script("arguments[0].click();", buttons[i])
+            time.sleep(1)
 
     def get_cart_count(self):
         try:
