@@ -6,11 +6,12 @@ class BasePage:
     def __init__(self, driver):
         self.driver = driver
         self.wait = WebDriverWait(driver, 10)
-        self.log = get_logger(self.__class__.__name__)   # logger must be here
+        self.log = get_logger(self.__class__.__name__)
 
     def click(self, locator):
         self.log.info(f"Clicking element: {locator}")
-        self.wait.until(EC.element_to_be_clickable(locator)).click()
+        element = self.wait.until(EC.element_to_be_clickable(locator))
+        self.driver.execute_script("arguments[0].click();", element)
 
     def type(self, locator, text):
         self.log.info(f"Typing '{text}' into element: {locator}")
