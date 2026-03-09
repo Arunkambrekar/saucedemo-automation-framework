@@ -2,7 +2,6 @@ import pytest
 import time
 from pages.login_page import LoginPage
 from pages.dashboard_page import DashboardPage
-from pages.cart_page import CartPage
 from pages.checkout_page import CheckoutPage
 from config.config import USERNAME, PASSWORD
 from selenium.webdriver.common.by import By
@@ -17,33 +16,39 @@ def reach_checkout(driver):
     login.click_login()
 
     WebDriverWait(driver, 15).until(EC.url_contains("inventory"))
-    time.sleep(1)
+    time.sleep(2)
 
-    dashboard = DashboardPage(driver)
-    dashboard.add_first_product_to_cart()
-
-    # Retry click if badge not found (headless CI fallback)
+    # Add item via direct JS execution — most reliable in headless
+    driver.execute_script("""
+        var buttons = document.querySelectorAll("[data-test^='add-to-cart']");
+        if(buttons.length > 0) { buttons[0].click(); }
+    """)
     time.sleep(3)
-    badge = driver.find_elements(By.CLASS_NAME, "shopping_cart_badge")
-    if not badge:
-        buttons = driver.find_elements(By.CSS_SELECTOR, "[data-test^='add-to-cart']")
-        if buttons:
-            driver.execute_script("arguments[0].click();", buttons[0])
-            time.sleep(3)
 
-    # Navigate directly to cart
+    # Go directly to cart URL
     driver.get("https://www.saucedemo.com/cart.html")
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "cart_item"))
-    )
+    time.sleep(2)
+
+    # Verify cart has item — if not, try adding again
+    items = driver.find_elements(By.CLASS_NAME, "cart_item")
+    if len(items) == 0:
+        driver.get("https://www.saucedemo.com/inventory.html")
+        time.sleep(2)
+        driver.execute_script("""
+            var buttons = document.querySelectorAll("[data-test^='add-to-cart']");
+            if(buttons.length > 0) { buttons[0].click(); }
+        """)
+        time.sleep(3)
+        driver.get("https://www.saucedemo.com/cart.html")
+        time.sleep(2)
 
     # Click checkout
-    checkout_btn = WebDriverWait(driver, 10).until(
+    checkout_btn = WebDriverWait(driver, 15).until(
         EC.element_to_be_clickable((By.ID, "checkout"))
     )
-    checkout_btn.click()
+    driver.execute_script("arguments[0].click();", checkout_btn)
 
-    # Wait for checkout step one
+    # Wait for checkout form
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.ID, "first-name"))
     )

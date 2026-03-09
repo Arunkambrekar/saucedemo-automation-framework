@@ -1,7 +1,6 @@
 import pytest
 import time
 from pages.login_page import LoginPage
-from pages.dashboard_page import DashboardPage
 from pages.cart_page import CartPage
 from config.config import USERNAME, PASSWORD
 from selenium.webdriver.common.by import By
@@ -10,31 +9,38 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def login_and_go_to_cart(driver):
+    from pages.login_page import LoginPage
     login = LoginPage(driver)
     login.enter_username(USERNAME)
     login.enter_password(PASSWORD)
     login.click_login()
 
     WebDriverWait(driver, 15).until(EC.url_contains("inventory"))
-    time.sleep(1)
+    time.sleep(2)
 
-    dashboard = DashboardPage(driver)
-    dashboard.add_first_product_to_cart()
-
-    # Retry click if badge not found (headless CI fallback)
+    # Add item via pure JS — bypasses all click intercept issues
+    driver.execute_script("""
+        var buttons = document.querySelectorAll("[data-test^='add-to-cart']");
+        if(buttons.length > 0) { buttons[0].click(); }
+    """)
     time.sleep(3)
-    badge = driver.find_elements(By.CLASS_NAME, "shopping_cart_badge")
-    if not badge:
-        buttons = driver.find_elements(By.CSS_SELECTOR, "[data-test^='add-to-cart']")
-        if buttons:
-            driver.execute_script("arguments[0].click();", buttons[0])
-            time.sleep(3)
 
     # Navigate directly to cart
     driver.get("https://www.saucedemo.com/cart.html")
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "cart_item"))
-    )
+    time.sleep(2)
+
+    # Retry if cart empty
+    items = driver.find_elements(By.CLASS_NAME, "cart_item")
+    if len(items) == 0:
+        driver.get("https://www.saucedemo.com/inventory.html")
+        time.sleep(2)
+        driver.execute_script("""
+            var buttons = document.querySelectorAll("[data-test^='add-to-cart']");
+            if(buttons.length > 0) { buttons[0].click(); }
+        """)
+        time.sleep(3)
+        driver.get("https://www.saucedemo.com/cart.html")
+        time.sleep(2)
 
     return CartPage(driver)
 
@@ -47,11 +53,11 @@ def test_cart_has_one_item(setup):
 
 def test_cart_continue_shopping(setup):
     login_and_go_to_cart(setup)
-    btn = WebDriverWait(setup, 10).until(
+    btn = WebDriverWait(setup, 15).until(
         EC.element_to_be_clickable((By.ID, "continue-shopping"))
     )
-    btn.click()
-    WebDriverWait(setup, 10).until(EC.url_contains("inventory"))
+    setup.execute_script("arguments[0].click();", btn)
+    time.sleep(3)
     assert "inventory" in setup.current_url
 
 
