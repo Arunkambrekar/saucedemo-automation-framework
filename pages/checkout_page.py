@@ -1,23 +1,17 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import ElementClickInterceptedException
 from pages.base_page import BasePage
 
 
 class CheckoutPage(BasePage):
 
-    FIRST_NAME = (By.ID, "first-name")
-    LAST_NAME = (By.ID, "last-name")
-    POSTAL_CODE = (By.ID, "postal-code")
+    FIRST_NAME   = (By.ID, "first-name")
+    LAST_NAME    = (By.ID, "last-name")
+    POSTAL_CODE  = (By.ID, "postal-code")
     CONTINUE_BTN = (By.ID, "continue")
-    FINISH_BTN = (By.ID, "finish")
-
-    # FIX: "summary_title" does not reliably appear in headless CI.
-    # The overview page is confirmed by the URL changing to /checkout-step-two
-    # AND the finish button being present — both are rock-solid signals.
-    FINISH_BTN_LOCATOR = (By.ID, "finish")
-
-    # FIX: success page uses data-test attribute, more stable than class name
+    FINISH_BTN   = (By.ID, "finish")
     SUCCESS_HEADER = (By.CLASS_NAME, "complete-header")
 
     def enter_details(self, first, last, postal):
@@ -34,12 +28,21 @@ class CheckoutPage(BasePage):
         self.driver.execute_script(
             "arguments[0].scrollIntoView({block: 'center'});", continue_btn
         )
-        self.driver.execute_script("arguments[0].click();", continue_btn)
 
-        # FIX: wait for the URL to reach step-two AND finish button to be present.
-        # This is more reliable than waiting for summary_title which is flaky in CI.
+        # ROOT FIX: JS click bypasses React's synthetic event system on
+        # SauceDemo's form — the button appears clicked but the form never
+        # validates/submits. Use a real Selenium .click() so React fires its
+        # onChange/onSubmit handlers. Fall back to JS only on intercept.
+        try:
+            continue_btn.click()
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", continue_btn)
+
+        # URL is the ground-truth that the form submitted cleanly.
+        # If Continue was a no-op (e.g. validation error), URL stays on
+        # step-one and this raises TimeoutException with a clear message.
         wait.until(EC.url_contains("checkout-step-two"))
-        wait.until(EC.element_to_be_clickable(self.FINISH_BTN_LOCATOR))
+        wait.until(EC.element_to_be_clickable(self.FINISH_BTN))
 
     def click_finish(self):
         wait = WebDriverWait(self.driver, 20)
@@ -50,9 +53,12 @@ class CheckoutPage(BasePage):
         self.driver.execute_script(
             "arguments[0].scrollIntoView({block: 'center'});", finish_btn
         )
-        self.driver.execute_script("arguments[0].click();", finish_btn)
 
-        # Wait for URL to confirm navigation away from step-two
+        try:
+            finish_btn.click()
+        except ElementClickInterceptedException:
+            self.driver.execute_script("arguments[0].click();", finish_btn)
+
         wait.until(EC.url_contains("checkout-complete"))
 
     def wait_for_order_completion(self):
