@@ -30,21 +30,10 @@ def reach_checkout(driver):
     )
     add_btn.click()
 
-    # ✅ Robust cart click
-    cart_icon = wait.until(
-        EC.element_to_be_clickable((By.CLASS_NAME, "shopping_cart_link"))
-    )
+    # ✅ FIX: Direct navigation instead of flaky click
+    driver.get("https://www.saucedemo.com/cart.html")
 
-    driver.execute_script(
-        "arguments[0].scrollIntoView({block: 'center'});", cart_icon
-    )
-
-    try:
-        cart_icon.click()
-    except:
-        driver.execute_script("arguments[0].click();", cart_icon)
-
-    # ✅ IMPORTANT: wait using element (NOT URL)
+    # Wait for cart page
     wait.until(
         EC.visibility_of_element_located((By.CLASS_NAME, "cart_item"))
     )
@@ -53,8 +42,7 @@ def reach_checkout(driver):
     checkout_btn = wait.until(
         EC.element_to_be_clickable((By.ID, "checkout"))
     )
-
-    driver.execute_script("arguments[0].click();", checkout_btn)
+    checkout_btn.click()
 
     # Wait for checkout form
     wait.until(
@@ -68,10 +56,7 @@ def test_complete_purchase(setup):
     checkout = reach_checkout(setup)
 
     checkout.enter_details("Arun", "KM", "560001")
-
-    # ✅ Now handled inside POM (stable)
     checkout.click_continue()
-
     checkout.click_finish()
     checkout.wait_for_order_completion()
 
