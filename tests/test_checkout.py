@@ -24,32 +24,34 @@ def reach_checkout(driver):
 
     # Add item to cart
     add_btn = wait.until(
-        EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-test='add-to-cart-sauce-labs-backpack']"))
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, "[data-test='add-to-cart-sauce-labs-backpack']")
+        )
     )
     add_btn.click()
 
-    # Click cart icon (robust)
+    # ✅ Robust cart click
     cart_icon = wait.until(
-        EC.presence_of_element_located((By.CLASS_NAME, "shopping_cart_link"))
+        EC.element_to_be_clickable((By.CLASS_NAME, "shopping_cart_link"))
     )
 
-    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", cart_icon)
+    driver.execute_script(
+        "arguments[0].scrollIntoView({block: 'center'});", cart_icon
+    )
 
     try:
         cart_icon.click()
     except:
         driver.execute_script("arguments[0].click();", cart_icon)
 
-    # ✅ Wait for cart page properly
-    wait.until(EC.url_contains("cart"))
-
+    # ✅ IMPORTANT: wait using element (NOT URL)
     wait.until(
         EC.visibility_of_element_located((By.CLASS_NAME, "cart_item"))
     )
 
     # Click checkout
     checkout_btn = wait.until(
-        EC.presence_of_element_located((By.ID, "checkout"))
+        EC.element_to_be_clickable((By.ID, "checkout"))
     )
 
     driver.execute_script("arguments[0].click();", checkout_btn)
@@ -62,17 +64,13 @@ def reach_checkout(driver):
     return CheckoutPage(driver)
 
 
-# ✅ FIXED (no skip anymore)
 def test_complete_purchase(setup):
     checkout = reach_checkout(setup)
 
     checkout.enter_details("Arun", "KM", "560001")
-    checkout.click_continue()
 
-    # ✅ FIX: wait for finish button instead of URL
-    WebDriverWait(setup, 15).until(
-        EC.visibility_of_element_located((By.ID, "finish"))
-    )
+    # ✅ Now handled inside POM (stable)
+    checkout.click_continue()
 
     checkout.click_finish()
     checkout.wait_for_order_completion()
