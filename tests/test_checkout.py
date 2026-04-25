@@ -17,9 +17,9 @@ def reach_checkout(driver):
     login.enter_password(PASSWORD)
     login.click_login()
 
-    # Wait for inventory page
+    # ✅ FIX: more stable wait for inventory page
     wait.until(
-        EC.visibility_of_element_located((By.CLASS_NAME, "inventory_list"))
+        EC.presence_of_element_located((By.CLASS_NAME, "inventory_item"))
     )
 
     # Add item to cart
@@ -30,7 +30,7 @@ def reach_checkout(driver):
     )
     add_btn.click()
 
-    # ✅ FIX: Direct navigation instead of flaky click
+    # ✅ Direct navigation (avoid flaky cart click)
     driver.get("https://www.saucedemo.com/cart.html")
 
     # Wait for cart page
