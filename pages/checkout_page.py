@@ -1,6 +1,8 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from pages.base_page import BasePage
+
 
 class CheckoutPage(BasePage):
 
@@ -19,18 +21,48 @@ class CheckoutPage(BasePage):
         self.type(self.POSTAL_CODE, postal)
 
     def click_continue(self):
-        self.click(self.CONTINUE_BTN)
+        wait = WebDriverWait(self.driver, 15)
 
-    # Wait until Overview page loads (after Continue)
-    def wait_for_overview_page(self):
-        self.wait.until(EC.visibility_of_element_located(self.OVERVIEW_HEADER))
+        continue_btn = wait.until(
+            EC.element_to_be_clickable(self.CONTINUE_BTN)
+        )
+
+        # Scroll into view (important for CI/headless)
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", continue_btn
+        )
+
+        # Reliable click
+        try:
+            continue_btn.click()
+        except:
+            self.driver.execute_script("arguments[0].click();", continue_btn)
+
+        # ✅ CRITICAL FIX: wait for next page (overview)
+        wait.until(
+            EC.visibility_of_element_located(self.OVERVIEW_HEADER)
+        )
 
     def click_finish(self):
-        self.click(self.FINISH_BTN)
+        wait = WebDriverWait(self.driver, 15)
 
-    # ✅ STABLE: wait for order completion using URL
+        finish_btn = wait.until(
+            EC.element_to_be_clickable(self.FINISH_BTN)
+        )
+
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});", finish_btn
+        )
+
+        try:
+            finish_btn.click()
+        except:
+            self.driver.execute_script("arguments[0].click();", finish_btn)
+
     def wait_for_order_completion(self):
-        self.wait.until(lambda d: "checkout-complete" in d.current_url)
+        WebDriverWait(self.driver, 15).until(
+            EC.visibility_of_element_located(self.SUCCESS_MSG)
+        )
 
     def get_success_message(self):
         return self.get_text(self.SUCCESS_MSG)
