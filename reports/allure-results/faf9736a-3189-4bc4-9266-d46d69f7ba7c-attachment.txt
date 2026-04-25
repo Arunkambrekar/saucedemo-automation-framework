@@ -1,0 +1,4 @@
+[32mINFO    [0m LoginPage:base_page.py:18 Typing 'standard_user' into element: ('id', 'user-name')
+[32mINFO    [0m LoginPage:base_page.py:18 Typing 'wrong_pass' into element: ('id', 'password')
+[32mINFO    [0m LoginPage:base_page.py:13 Clicking element: ('id', 'login-button')
+[32mINFO    [0m LoginPage:base_page.py:24 Getting text from element: ('css selector', "[data-test='error']")

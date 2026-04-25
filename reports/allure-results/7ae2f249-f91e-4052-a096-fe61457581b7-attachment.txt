@@ -1,0 +1,3 @@
+[32mINFO    [0m LoginPage:base_page.py:18 Typing 'standard_user' into element: ('id', 'user-name')
+[32mINFO    [0m LoginPage:base_page.py:18 Typing 'secret_sauce' into element: ('id', 'password')
+[32mINFO    [0m LoginPage:base_page.py:13 Clicking element: ('id', 'login-button')
