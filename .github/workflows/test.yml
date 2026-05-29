@@ -1,35 +1,44 @@
-name: Run Selenium Tests
+# .github/workflows/tests.yml
+name: Selenium Test Suite
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      CI: true   # 👈 This triggers headless mode
-
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Install Chrome
-        run: |
-          sudo apt update
-          sudo apt install -y google-chrome-stable
+        uses: browser-actions/setup-chrome@v1
 
-      - name: Run Tests
-        run: |
-          pytest
+      - name: Run tests
+        run: pytest -n auto --dist loadfile -v
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: report.html
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/
